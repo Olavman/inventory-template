@@ -1,0 +1,46 @@
+[gd_scene load_steps=3 format=3 uid="uid://bmbnw46mq2v8k"]
+
+[ext_resource type="Script" path="res://Inventory/Scripts/Inventory/UI/InventorySlot.cs" id="1_etnhu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rehgj"]
+bg_color = Color(0.131693, 0.000998388, 0.236538, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0, 0.8, 0.8, 1)
+border_blend = true
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="InventorySlot" type="Control"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("1_etnhu")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+theme_override_styles/panel = SubResource("StyleBoxFlat_rehgj")
+
+[node name="Icon" type="TextureRect" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Quantity" type="Label" parent="."]
+layout_mode = 0
+offset_right = 1.0
+offset_bottom = 23.0
