@@ -28,10 +28,18 @@ public partial class InventoryUI : Control
 			slot.Dropped += OnSlotDropped;
 		}
 
+		// Wire inventory change event to refresh UI
+		_inventory.Changed += OnInventoryChanged;
+
 		RefreshAllSlots();
     }
 
-	public void AddItem(IItem item, int amount)
+    private void OnInventoryChanged()
+    {
+		RefreshAllSlots();
+    }
+
+    public void AddItem(IItem item, int amount)
 	{
 		_inventory.AddItem(item, amount);
 		GD.Print("Item added");

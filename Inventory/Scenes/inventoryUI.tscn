@@ -41,7 +41,7 @@ theme_override_constants/margin_bottom = 32
 
 [node name="Grid" type="GridContainer" parent="CenterContainer/Background/MarginContainer"]
 layout_mode = 2
-columns = 8
+columns = 6
 
 [node name="InventorySlot" parent="CenterContainer/Background/MarginContainer/Grid" instance=ExtResource("2_sf7dm")]
 layout_mode = 2

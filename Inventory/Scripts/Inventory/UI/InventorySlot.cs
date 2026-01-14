@@ -11,6 +11,7 @@ public partial class InventorySlot : Control
 
 	// Which index this slot represents in the inventory
 	public int SlotIndex {get; set;}
+	public bool IsLocked {get; set;} = false;
 
 	// Reference to the inventory this slot belongs to
 	public Inventory Inventory {get; set;}

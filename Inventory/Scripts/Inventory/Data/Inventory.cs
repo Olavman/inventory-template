@@ -6,14 +6,18 @@ using System.Collections.Generic;
 
 public sealed class Inventory
 {
+	public event Action? Changed;
 	private readonly ItemStack?[] slots;
 	public ItemStack? GetStackAt(int index) => slots[index];
 	public bool IsSlotEmpty(int index) => slots[index] == null;
 
-	public static void Transfer(
-		DragPayload payload,
-		Inventory target,
-		int targetIndex)
+	private void NotifyChanged()
+	{
+		Changed?.Invoke();
+	}
+
+	// Transfers items from one inventory to another based on the drag payload
+	public static void Transfer(DragPayload payload, Inventory target, int targetIndex)
 	{
 		var source = payload.Source;
 		int sourceIndex = payload.SourceIndex;
@@ -31,7 +35,7 @@ public sealed class Inventory
 
 		int amountToMove = Math.Min(payload.Amount, sourceStack.Quantity);
 
-		// Case 1: Same inventory, same slot -> do nothing
+		// Case 1: Same inventory & same slot -> do nothing
 		if (ReferenceEquals(source, target) && sourceIndex == targetIndex)
 		{
 			return;
@@ -51,14 +55,27 @@ public sealed class Inventory
 				source.ClearSlot(sourceIndex);
 			}
 
+			// Notify both inventories of change
+			target.NotifyChanged();
+			source.NotifyChanged();
 			return;
 		}
 
 		// Case 3: Target slot empty -> move
 		if (targetStack == null)
 		{
+			// Move entire stack or partial
 			target.SetSlot(targetIndex, payload.Item, amountToMove);
-			source.ClearSlot(sourceIndex);
+			// Adjust source slot quantity
+			sourceStack.Quantity -= amountToMove;
+			if (sourceStack.Quantity <= 0)
+			{
+				source.ClearSlot(sourceIndex);
+			}
+
+			// Notify both inventories of change
+			target.NotifyChanged();
+			source.NotifyChanged();
 			return;
 		}
 
@@ -79,17 +96,22 @@ public sealed class Inventory
 	private void SetSlot(int index, IItem item, int amount)
 	{
 		slots[index] = new ItemStack(item, amount);
+		// Clear slot if amount is zero or less
+		if (amount <= 0)
+		{
+			ClearSlot(index);
+		}
 	}
 
-	private static void Swap(
-		Inventory a, int indexA,
-		Inventory b, int indexB)
+	private static void Swap(Inventory a, int indexA, Inventory b, int indexB)
 	{
 		var temp = a.slots[indexA];
 		a.slots[indexA] = b.slots[indexB];
 		b.slots[indexB] = temp;
+		// Notify both inventories of change
+		a.NotifyChanged();
+		b.NotifyChanged();
 	}
-
 
 	public bool TryGetItemAt(int index, out IItem? item)
 	{

@@ -17,7 +17,7 @@ public partial class Game : Node
 		if (Input.IsActionJustPressed("test"))
 		{
 			GD.PrintT("Pressed");
-			inventoryUI.AddItem(new BananaItem(), 10);
+			inventoryUI.AddItem(new BananaItem(), 7);
 		}
 	}
 }
