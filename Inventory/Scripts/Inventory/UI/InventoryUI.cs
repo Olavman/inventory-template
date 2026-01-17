@@ -4,9 +4,12 @@ using System;
 public partial class InventoryUI : Control
 {
 	[Export] private NodePath _gridPath;
+
+	[Signal] public delegate void QuickMoveRequestEventHandler(int slotIndex);
 	
 	private GridContainer _grid;
-	private Inventory _inventory;
+	internal Inventory _inventory;
+	private Inventory _otherInventory; 
 
     public override void _Ready()
     {
@@ -26,6 +29,7 @@ public partial class InventoryUI : Control
 
 			// Listen for drop events
 			slot.Dropped += OnSlotDropped;
+			slot.QuickMoveRequest += OnQuickMove;
 		}
 
 		// Wire inventory change event to refresh UI
@@ -33,6 +37,12 @@ public partial class InventoryUI : Control
 
 		RefreshAllSlots();
     }
+
+	internal void OnQuickMove (int slotIndex)
+	{
+		GD.Print("Quick move requested for slot " + slotIndex);
+		EmitSignal(nameof(QuickMoveRequest), slotIndex);
+	}
 
     private void OnInventoryChanged()
     {
@@ -62,5 +72,14 @@ public partial class InventoryUI : Control
 		{
 			slot.Refresh();
 		}
+    }
+
+	// Accept a quick move request from another inventory
+    internal void AcceptQuickMove(DragPayload payload)
+    {
+		_inventory.AddItem(payload.Item, payload.Amount);
+		payload.Source.ClearSlot(payload.SourceIndex);
+
+		RefreshAllSlots();
     }
 }

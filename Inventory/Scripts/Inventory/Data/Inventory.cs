@@ -11,7 +11,7 @@ public sealed class Inventory
 	public ItemStack? GetStackAt(int index) => slots[index];
 	public bool IsSlotEmpty(int index) => slots[index] == null;
 
-	private void NotifyChanged()
+	internal void NotifyChanged()
 	{
 		Changed?.Invoke();
 	}
@@ -88,7 +88,7 @@ public sealed class Inventory
 		slots = new ItemStack[size];
 	}
 
-	private void ClearSlot(int index)
+	internal void ClearSlot(int index)
 	{
 		slots[index] = null;
 	}
@@ -148,11 +148,6 @@ public sealed class Inventory
 		// Same item in slot
 		GD.Print("Adding to existing stack in slot");
 		return slot.Add(amount);
-	}
-
-	public void RemoveAt(int index)
-	{
-		slots[index] = null;
 	}
 
 	public int AddItem(IItem item, int amount)

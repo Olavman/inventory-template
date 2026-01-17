@@ -1,6 +1,12 @@
 using Godot;
 using System;
 
+public enum DragMode
+{
+	Full,
+	Half,
+	Single
+}
 public partial class DragPayload : RefCounted // IMPORTANT: Must be a RefCounted object to be passed via Variant
 {
 	// Inventory where the drag started
@@ -15,12 +21,15 @@ public partial class DragPayload : RefCounted // IMPORTANT: Must be a RefCounted
 	// How many units are being dragged
 	public readonly int Amount;
 
-	public DragPayload(Inventory source, int sourceIndex, IItem item, int amount)
+	// Drag mode (full, half, single)
+	public readonly DragMode Mode;
+
+	public DragPayload(Inventory source, int sourceIndex, IItem item, int amount, DragMode mode)
 	{
 		Source = source;
 		SourceIndex = sourceIndex;
 		Item = item;
 		Amount = amount;
-	}
-	
+		Mode = mode;
+	}	
 }
