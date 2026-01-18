@@ -4,12 +4,7 @@ using System;
 public partial class InventorySlot : Control
 {
 	// Reference to the global inventory controller
-	private InventoryController _inventoryController => GetNode<InventoryController>("/root/Game/InventoryController");
-	// Emitted when the user starts dragging from this slot
-	[Signal] public delegate void DragStartedEventHandler(DragPayload payload);
-
-	// Emitted when something is dropped onto this slot
-	[Signal] public delegate void DroppedEventHandler(DragPayload payload, int targetIndex);
+	public InventoryController InventoryController {get; set; } = null!;
 
 	// Emitted when the user requests a quick move of an item
 	[Signal] public delegate void QuickMoveRequestEventHandler(int slotIndex);
@@ -27,7 +22,6 @@ public partial class InventorySlot : Control
 
 	private Color _normalColor = new Color(1,1,1,1);
 	private Color _highlightColor = new Color(1.6f,1.6f,1.6f,1);
-    private DragMode _nextDragMode;
 
     public override void _Ready()
 	{
@@ -97,8 +91,23 @@ public partial class InventorySlot : Control
 		// Start dragging from this slot
 		if (mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right)
 		{
+			if (InventoryController == null)
+			{
+				GD.PrintErr("InventoryController is null!");
+				return;
+			}
+			if (Inventory == null)
+			{
+				GD.PrintErr("Inventory is null!");
+				return;
+			}
+			if (InventoryController.CursorInventory == null)
+			{
+				GD.PrintErr("CursorInventory is null!");
+				return;
+			}
 			Inventory.Transfer(
-				sourceInventory: _inventoryController.CursorInventory,
+				sourceInventory: InventoryController.CursorInventory,
 				sourceIndex: 0,
 				targetInventory: Inventory,
 				targetIndex: SlotIndex,
@@ -107,7 +116,7 @@ public partial class InventorySlot : Control
 		}
 
 		Inventory.NotifyChanged();
-		_inventoryController.CursorInventory.NotifyChanged();
+		InventoryController.CursorInventory.NotifyChanged();
 		AcceptEvent();
     }
 }

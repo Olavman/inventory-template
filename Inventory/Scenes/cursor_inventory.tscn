@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dhtj1mdmab6ek"]
 
-[ext_resource type="Script" path="res://Inventory/Scripts/Inventory/Data/InventoryController.cs" id="1_3a1gc"]
+[ext_resource type="Script" path="res://Inventory/Scripts/Inventory/UI/CursorInventoryUI.cs" id="1_sr3jn"]
 
 [node name="CursorInventoryUI" type="Control"]
 layout_mode = 3
@@ -10,15 +10,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-script = ExtResource("1_3a1gc")
+script = ExtResource("1_sr3jn")
 
-[node name="CursorItemIcon" type="TextureRect" parent="."]
+[node name="Icon" type="TextureRect" parent="."]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 mouse_filter = 2
 
-[node name="CursorItemQuantity" type="Label" parent="."]
+[node name="Quantity" type="Label" parent="."]
 layout_mode = 0
 offset_right = 40.0
 offset_bottom = 23.0

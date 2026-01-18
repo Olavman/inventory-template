@@ -2,12 +2,13 @@
 using Godot;
 using System;
 
-public partial class InventoryController : Control
+public partial class InventoryController : Node
 {
-    private InventoryUI? _playerInventory;
-    private InventoryUI? _otherInventory;
+	[Export] private PackedScene _cursorInventoryUIScene = null!;
+	private InventoryUI? _playerInventory;
+	private InventoryUI? _otherInventory;
 
-    public InventoryUI? PlayerInventory {
+	public InventoryUI? PlayerInventory {
 		get{
 			return _playerInventory;
 		}
@@ -31,38 +32,33 @@ public partial class InventoryController : Control
 
 		}
 	}
+	private CursorInventoryUI _cursorUI = null!;
 	public Inventory CursorInventory { get; private set; } = new Inventory(1);
+	
 	private TextureRect _cursorItemIcon = null!;
 	private Label _cursorItemQuantity = null!;
 
-    public override void _Ready()
-    {
-		_cursorItemIcon = GetNode<TextureRect>("CursorItemIcon");
-		_cursorItemQuantity = GetNode<Label>("CursorItemQuantity");
+	public override void _Ready()
+	{
+		_cursorUI = _cursorInventoryUIScene.Instantiate<CursorInventoryUI>();
+		AddChild(_cursorUI);
 
 		// Wire inventory change event to refresh UI
 		CursorInventory.Changed += OnInventoryChanged;
-    }
+	}
 
-    private void OnInventoryChanged()
-    {
+	private void OnInventoryChanged()
+	{
 		var stack = CursorInventory.GetStackAt(0);
-		if (stack == null)
-		{
-			_cursorItemIcon.Visible = false;
-			_cursorItemQuantity.Visible = false;
-			return;
-		}
 
-		int quantity = stack.Quantity;
-		
-		_cursorItemIcon.Texture = stack.Item.Icon;
-		_cursorItemIcon.Visible = true;
-		_cursorItemQuantity.Visible = true;
-		_cursorItemQuantity.Text = quantity.ToString();
-    }
+		_cursorUI?.SetItem(
+			stack?.Item,
+			stack?.Quantity ?? 0
+		);
+		return;
+	}
 
-    public override void _Process(double delta)
+	public override void _Process(double delta)
 	{
 		// GD.Print("A");
 		if (Input.IsActionJustPressed("test"))
@@ -73,28 +69,27 @@ public partial class InventoryController : Control
 		{
 			PlayerInventory?.AddItem(new WoodItem(), 2);
 		}
-		GlobalPosition = GetViewport().GetMousePosition()-new Vector2(16,16);
 	}
 
-    private void OnOtherQuickMoveRequest(int slotIndex)
-    {
+	private void OnOtherQuickMoveRequest(int slotIndex)
+	{
 		if (PlayerInventory == null || OtherInventory == null)
 			return;
 
 		QuickMove(OtherInventory._inventory, PlayerInventory._inventory, slotIndex
 		);
-    }
+	}
 
-    private void OnPlayerQuickMoveRequest(int slotIndex)
-    {
+	private void OnPlayerQuickMoveRequest(int slotIndex)
+	{
 		if (PlayerInventory == null || OtherInventory == null)
-        return;
+		return;
 
 		QuickMove(PlayerInventory._inventory, OtherInventory._inventory, slotIndex
 		);
-    }
+	}
 
-    private void QuickMove(Inventory source, Inventory target, int slotIndex)
+	private void QuickMove(Inventory source, Inventory target, int slotIndex)
 	{
 		GD.Print("Quick moving item from slot " + slotIndex);
 		var stack = source.GetStackAt(slotIndex);
