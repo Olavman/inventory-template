@@ -3,13 +3,12 @@ using System;
 
 public partial class Game : Node
 {
-	InventoryController inventoryController;
+	private InventoryController _inventoryController => GetNode<InventoryController>("/root/Game/InventoryController");
 	public override void _Ready()
 	{
-		inventoryController = GetNode<InventoryController>("InventoryController");
 
-		inventoryController.PlayerInventory = GetNode<InventoryUI>("InventoryUI");
-		inventoryController.OtherInventory = GetNode<InventoryUI>("InventoryUI2");
+		_inventoryController.PlayerInventory = GetNode<InventoryUI>("InventoryUI");
+		_inventoryController.OtherInventory = GetNode<InventoryUI>("InventoryUI2");
 	}
 
 }

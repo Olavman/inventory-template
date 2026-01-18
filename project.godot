@@ -15,6 +15,10 @@ run/main_scene="res://Inventory/Scenes/Game.tscn"
 config/features=PackedStringArray("4.3", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+InventoryController="*res://Inventory/Scripts/Inventory/Data/InventoryController.cs"
+
 [dotnet]
 
 project/assembly_name="Inventory template"

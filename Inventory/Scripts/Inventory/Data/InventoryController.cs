@@ -2,7 +2,7 @@
 using Godot;
 using System;
 
-public partial class InventoryController : Node
+public partial class InventoryController : Control
 {
     private InventoryUI? _playerInventory;
     private InventoryUI? _otherInventory;
@@ -31,8 +31,38 @@ public partial class InventoryController : Node
 
 		}
 	}
+	public Inventory CursorInventory { get; private set; } = new Inventory(1);
+	private TextureRect _cursorItemIcon = null!;
+	private Label _cursorItemQuantity = null!;
 
-	public override void _Process(double delta)
+    public override void _Ready()
+    {
+		_cursorItemIcon = GetNode<TextureRect>("CursorItemIcon");
+		_cursorItemQuantity = GetNode<Label>("CursorItemQuantity");
+
+		// Wire inventory change event to refresh UI
+		CursorInventory.Changed += OnInventoryChanged;
+    }
+
+    private void OnInventoryChanged()
+    {
+		var stack = CursorInventory.GetStackAt(0);
+		if (stack == null)
+		{
+			_cursorItemIcon.Visible = false;
+			_cursorItemQuantity.Visible = false;
+			return;
+		}
+
+		int quantity = stack.Quantity;
+		
+		_cursorItemIcon.Texture = stack.Item.Icon;
+		_cursorItemIcon.Visible = true;
+		_cursorItemQuantity.Visible = true;
+		_cursorItemQuantity.Text = quantity.ToString();
+    }
+
+    public override void _Process(double delta)
 	{
 		// GD.Print("A");
 		if (Input.IsActionJustPressed("test"))
@@ -43,6 +73,7 @@ public partial class InventoryController : Node
 		{
 			PlayerInventory?.AddItem(new WoodItem(), 2);
 		}
+		GlobalPosition = GetViewport().GetMousePosition()-new Vector2(16,16);
 	}
 
     private void OnOtherQuickMoveRequest(int slotIndex)

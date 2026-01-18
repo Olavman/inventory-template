@@ -27,8 +27,7 @@ public partial class InventoryUI : Control
 			slot.SlotIndex = i;
 			slot.Inventory = _inventory;
 
-			// Listen for drop events
-			slot.Dropped += OnSlotDropped;
+			// Listen for quick move requests
 			slot.QuickMoveRequest += OnQuickMove;
 		}
 
@@ -56,15 +55,15 @@ public partial class InventoryUI : Control
 		RefreshAllSlots();
 	}
 
-    private void OnSlotDropped(DragPayload payload, int targetIndex)
-    {
-		// This is the ONLY place where inventory changes happen
-		Inventory.Transfer(payload, _inventory, targetIndex);
+    // private void OnSlotDropped(DragPayload payload, int targetIndex)
+    // {
+	// 	// This is the ONLY place where inventory changes happen
+	// 	Inventory.Transfer(payload, _inventory, targetIndex);
 
-		// Update all slot visuals
-		RefreshAllSlots();
-		GD.Print("Inventory refreshed");
-    }
+	// 	// Update all slot visuals
+	// 	RefreshAllSlots();
+	// 	GD.Print("Inventory refreshed");
+    // }
 
     private void RefreshAllSlots()
     {

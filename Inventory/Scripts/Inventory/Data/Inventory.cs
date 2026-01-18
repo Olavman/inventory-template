@@ -4,6 +4,13 @@ using Godot;
 using System;
 using System.Collections.Generic;
 
+public enum TransferAmount
+{
+	Full,
+	Half,
+	Single
+}
+
 public sealed class Inventory
 {
 	public event Action? Changed;
@@ -16,71 +23,73 @@ public sealed class Inventory
 		Changed?.Invoke();
 	}
 
-	// Transfers items from one inventory to another based on the drag payload
-	public static void Transfer(DragPayload payload, Inventory target, int targetIndex)
+	public static void Transfer(Inventory sourceInventory, int sourceIndex, Inventory targetInventory, int targetIndex, TransferAmount amountMode)
 	{
-		var source = payload.Source;
-		int sourceIndex = payload.SourceIndex;
-
-		var sourceStack = source.GetStackAt(sourceIndex);
-		if (sourceStack == null)
-		{
-			return; //Nothing to transfer
-		}
-
-		if (sourceStack.Item.Name != payload.Item.Name)
-		{
-			return; //Item mismatch
-		}
-
-		int amountToMove = Math.Min(payload.Amount, sourceStack.Quantity);
+		// NOTE:
+		// sourceInventory is expected to be the cursor inventory (1-slot)
+		// so sourceStack.Quantity already represents the intended transfer amount
+		var sourceStack = sourceInventory.GetStackAt(sourceIndex);
+		var targetStack = targetInventory.GetStackAt(targetIndex);
 
 		// Case 1: Same inventory & same slot -> do nothing
-		if (ReferenceEquals(source, target) && sourceIndex == targetIndex)
+		if (ReferenceEquals(sourceInventory, targetInventory) && sourceIndex == targetIndex)
 		{
 			return;
 		}
 
 		// Case 2: Try merge
-		var targetStack = target.GetStackAt(targetIndex);
-		if (targetStack != null &&
-			targetStack.Item.Name == payload.Item.Name)
+		if (targetStack != null && sourceStack != null && targetStack.Item.Name == sourceStack.Item.Name)
 		{
+			int amountToMove = amountMode switch
+			{
+				TransferAmount.Full   => sourceStack.Quantity,
+				TransferAmount.Half   => (sourceStack.Quantity + 1) / 2,
+				TransferAmount.Single => 1,
+				_ => 0
+			};
+
+			amountToMove = Math.Min(amountToMove, sourceStack.Quantity);
 			int leftover = targetStack.Add(amountToMove);
 			int moved = amountToMove - leftover;
 
 			sourceStack.Quantity -= moved;
-			if (sourceStack.Quantity == 0)
+			if (sourceStack.Quantity <= 0)
 			{
-				source.ClearSlot(sourceIndex);
+				sourceInventory.ClearSlot(sourceIndex);
 			}
 
 			// Notify both inventories of change
-			target.NotifyChanged();
-			source.NotifyChanged();
+			targetInventory.NotifyChanged();
+			sourceInventory.NotifyChanged();
 			return;
 		}
 
-		// Case 3: Target slot empty -> move
-		if (targetStack == null)
+		// Case 3: Source slot empty -> pick up
+		if (sourceStack == null && targetStack != null)
 		{
-			// Move entire stack or partial
-			target.SetSlot(targetIndex, payload.Item, amountToMove);
-			// Adjust source slot quantity
-			sourceStack.Quantity -= amountToMove;
-			if (sourceStack.Quantity <= 0)
+			int amount = amountMode switch
 			{
-				source.ClearSlot(sourceIndex);
+				TransferAmount.Full => targetStack!.Quantity,
+				TransferAmount.Half => (targetStack!.Quantity + 1) / 2,
+				TransferAmount.Single => 1,
+				_ => 0
+			};
+			IItem item = targetStack!.Item;
+			sourceInventory.SetSlot(sourceIndex, item, amount);
+			targetStack.Quantity -= amount;
+			if (targetStack.Quantity <= 0)
+			{
+				targetInventory.ClearSlot(targetIndex);
 			}
-
+			
 			// Notify both inventories of change
-			target.NotifyChanged();
-			source.NotifyChanged();
+			targetInventory.NotifyChanged();
+			sourceInventory.NotifyChanged();
 			return;
 		}
 
 		// Case 4: Swap
-		Swap(source, sourceIndex, target, targetIndex);
+		Swap(sourceInventory, sourceIndex, targetInventory, targetIndex);
 	}
 
 	public Inventory(int size)
@@ -103,7 +112,7 @@ public sealed class Inventory
 		}
 	}
 
-	private static void Swap(Inventory a, int indexA, Inventory b, int indexB)
+	internal static void Swap(Inventory a, int indexA, Inventory b, int indexB)
 	{
 		var temp = a.slots[indexA];
 		a.slots[indexA] = b.slots[indexB];

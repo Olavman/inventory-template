@@ -3,6 +3,8 @@ using System;
 
 public partial class InventorySlot : Control
 {
+	// Reference to the global inventory controller
+	private InventoryController _inventoryController => GetNode<InventoryController>("/root/Game/InventoryController");
 	// Emitted when the user starts dragging from this slot
 	[Signal] public delegate void DragStartedEventHandler(DragPayload payload);
 
@@ -72,105 +74,40 @@ public partial class InventorySlot : Control
 		_quantity.Text = stack.Quantity.ToString();
 	}
 
-	// Godot calls this automatically when user starts dragging from this Control
-	public override Variant _GetDragData(Vector2 atPosition)
-	{
-		GD.Print("Want to drag from slot " + SlotIndex);
-		
-		var stack = Inventory.GetStackAt(SlotIndex);
-		if (stack == null)
-		{
-			return default;
-		}
-
-		int amount = _nextDragMode switch
-		{
-			DragMode.Half => stack.Quantity / 2,
-			DragMode.Single => 1,
-			_ => stack.Quantity
-		};
-
-		_nextDragMode = DragMode.Full; // Reset for next time
-
-		if (amount <= 0)
-		{
-			return default;
-		}
-
-		// Create a DragPayload
-		// IMPORTANT: This is DATA, not the actual stack
-		var payload = new DragPayload(
-			Inventory,			// Which inventory it came from
-			SlotIndex,			// Which slot it came from
-			stack.Item,			// What item it is
-			amount,				// How many items are being dragged
-			DragMode.Full		// Drag mode
-		);
-
-		// Create drag preview
-		var preview = new TextureRect();
-		preview.Texture = stack.Item.Icon;
-		preview.ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize;
-		preview.CustomMinimumSize = stack.Item.Icon.GetSize();
-		preview.Modulate = new Color(1, 1, 1, 0.85f);
-
-		SetDragPreview(preview);
-
-		// Notify UI owner
-		EmitSignal(nameof(DragStarted), payload);
-
-		// Godot will pass this payload to _DropData
-		return Variant.From(payload);
-	}
-
     public override void _GuiInput(InputEvent e)
     {
-		if (e is InputEventMouseButton mb && mb.Pressed)
+		if (e is not InputEventMouseButton mb || !mb.Pressed)
 		{
-			// Handle quick move requests
-			if (mb.ButtonIndex == MouseButton.Left && Input.IsKeyPressed(Key.Shift))
-			{
-				EmitSignal(nameof(QuickMoveRequest), SlotIndex);
-				AcceptEvent();
-			}
-			// Half stack drag
-			else if (mb.ButtonIndex == MouseButton.Right)
-			{
-				_nextDragMode = DragMode.Half;
-				AcceptEvent();
-			}
-			// Single item drag
-			else if (mb.ButtonIndex == MouseButton.Left && Input.IsKeyPressed(Key.Ctrl))
-			{
-				_nextDragMode =  DragMode.Single;
-				AcceptEvent();
-			}
-			// Full stack drag
-			else
-			{
-				_nextDragMode = DragMode.Full;
-			}
+			return;
 		}
+
+		// Quick transfer to another inventory
+		if (mb.ButtonIndex == MouseButton.Left && Input.IsKeyPressed(Key.Shift))
+		{
+			EmitSignal(nameof(QuickMoveRequest), SlotIndex);
+			AcceptEvent();
+			return;
+		}
+
+		var mode = 
+			mb.ButtonIndex == MouseButton.Right ? TransferAmount.Half :
+			Input.IsKeyPressed(Key.Ctrl) 		? TransferAmount.Single :
+												  TransferAmount.Full;
+
+		// Start dragging from this slot
+		if (mb.ButtonIndex == MouseButton.Left || mb.ButtonIndex == MouseButton.Right)
+		{
+			Inventory.Transfer(
+				sourceInventory: _inventoryController.CursorInventory,
+				sourceIndex: 0,
+				targetInventory: Inventory,
+				targetIndex: SlotIndex,
+				amountMode: mode
+			);
+		}
+
+		Inventory.NotifyChanged();
+		_inventoryController.CursorInventory.NotifyChanged();
+		AcceptEvent();
     }
-
-    
-
-	// Called continously while dragging over this Control
-    public override bool _CanDropData(Vector2 atPosition, Variant data)
-    {
-		GD.Print("Checking if can drop on slot " + SlotIndex);
-		// Only accept if data is a DragPayload
-		return data.VariantType == Variant.Type.Object &&
-			data.As<DragPayload>() != null;
-    }
-
-	// Called when the mouse is released over this Control
-	public override void _DropData(Vector2 atPosition, Variant data)
-	{
-		GD.Print("Dropped on slot " + SlotIndex);
-		var payload = data.As<DragPayload>();
-
-		// Tell InventoryUI that something was dropped here
-		EmitSignal(nameof(Dropped), payload, SlotIndex);
-	}
 }
